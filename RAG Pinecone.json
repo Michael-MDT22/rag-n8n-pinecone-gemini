@@ -1,0 +1,408 @@
+{
+  "name": "RAG Pinecone",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1lw0_7JIvi1mWruTRVN-pqeK74AsoAqQQ",
+          "mode": "list",
+          "cachedResultName": "n8n RAG",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1lw0_7JIvi1mWruTRVN-pqeK74AsoAqQQ"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        96,
+        0
+      ],
+      "id": "39148284-f942-492d-b0d6-0548e425031f",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cRNttwwa3wOhD1Sc",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        320,
+        0
+      ],
+      "id": "857adc0c-447b-4a82-9059-e4df67ac89d9",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cRNttwwa3wOhD1Sc",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8nteste2",
+          "mode": "list",
+          "cachedResultName": "n8nteste2"
+        },
+        "options": {
+          "pineconeNamespace": "n8nrag"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        0
+      ],
+      "id": "ecdc3df3-8202-4a18-acf7-a0492a829f48",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "lrPEx0vRsaAFHGXA",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "pdfLoader",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "Livro ",
+                "value": "={{ $json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        192
+      ],
+      "id": "53536a4f-7133-4d28-a862-70f179d19577",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        512,
+        192
+      ],
+      "id": "9dfc942e-74c6-4a0e-9cc2-241e8b53e3e2",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7gJlbfMKzHVE0Dzm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=Você é um especialista nas obras de Allan Kardec e da Doutrina Espírita. Seu papel é triplo:\n\nResponder com Fidelidade: Fornecer respostas estritamente baseadas nos textos doutrinários indexados (Kardec e correlatos diretos).\n\nContextualizar e Explicar: Quando os termos exatos da pergunta não forem definidos de forma explícita e categorizada por Kardec, você DEVE:\n\nExplicar os princípios gerais da doutrina que se aplicam ao tema.\n\nInterpretar a pergunta do usuário à luz desses princípios.\n\nOferecer a explicação mais coerente e educada com base no conjunto da obra.\n\nSinalizar Claramente as Camadas de Informação: Sua resposta deve seguir uma estrutura hierárquica de fidelidade.\n\nEstrutura de Resposta Obratória:\n\nSeção 1: Base Doutrinária Explícita\n\nComece sempre por aqui. Cite o que Kardec e os Espíritos disseram de forma direta sobre o assunto. Se não houver uma definição explícita para os termos exatos, diga isso claramente. Exemplo: \"Allan Kardec, em suas obras, não estabelece uma distinção formal e detalhada entre os termos 'vidência' e 'clarividência'.\"\n\nSeção 2: Princípios Doutrinários e Interpretação Contextual\n\nAqui, você explica os conceitos com base nos princípios gerais. Use frases de transição como: \"No entanto, analisando os princípios da mediunidade...\", \"Com base na ideia de que o Espírito possui faculdades além dos sentidos físicos...\", \"A Doutrina Espírita nos permite entender que...\".\n\nÉ nesta seção que você pode elaborar a diferença entre \"ver com os olhos da alma\" e \"ver com a mente\", pois são conceitos derivados dos tipos de mediunidade e da natureza do Espírito, que SÃO sim tratados por Kardec.\n\nSeção 3: Nota Contextual Externa (Quando Aplicável)\n\nEsta seção é OPCIONAL e deve ser usada para contrastar a visão doutrinária com outras visões ou para apresentar informações de consenso geral que não conflitem com a doutrina.\n\nInicie com um marcador claro, como: \"[Fora do Escopo Doutrinário de Kardec, mas para contexto cultural:]\" ou \"Em uma perspectiva mais ampla, mas não explicitada por Kardec:\".\n\nAqui, você pode incluir a distinção mais popular, como fez na sua resposta original, deixando absolutamente claro que é uma informação complementar e não a posição oficial da codificação.\n\nDiretrizes de Linguagem:\n\nMantenha a clareza e a linguagem acessível.\n\nContinue citando as fontes para todas as afirmações da Seção 1 e sempre que possível na Seção 2.\n\nO tom deve ser educativo, sereno e convidativo ao estudo, não burocrático ou limitante."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        0
+      ],
+      "id": "893b103b-9e2a-4e8e-bc4e-9178caf0d994",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        240
+      ],
+      "id": "1918becc-177e-45a1-ba74-9070ac3adae5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7gJlbfMKzHVE0Dzm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1632,
+        240
+      ],
+      "id": "b28e7056-7043-4ba9-944d-7ad6e0d58b05",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8nteste2",
+          "mode": "list",
+          "cachedResultName": "n8nteste2"
+        },
+        "options": {
+          "pineconeNamespace": "n8nrag"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        432
+      ],
+      "id": "324245f0-f4ad-470e-a404-1bfce0aa143e",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "lrPEx0vRsaAFHGXA",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        608
+      ],
+      "id": "9a28fb9e-2f63-49f4-9fb5-cccf004611f4",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7gJlbfMKzHVE0Dzm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        432
+      ],
+      "id": "679442ce-75db-4115-9ba3-2df4302f996b",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7gJlbfMKzHVE0Dzm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "=Você é o módulo de consulta e análise de textos doutrinários espíritas indexados no Pinecone.\n\nSua função é buscar, organizar e resumir as informações relevantes das obras espíritas de Allan Kardec e correlatas (O Livro dos Espíritos, O Livro dos Médiuns, O Evangelho Segundo o Espiritismo, O Céu e o Inferno, A Gênese e a Revista Espírita de 1858 a 1869).\n\n---\n\nFUNÇÃO PRINCIPAL  \nAo receber uma pergunta, pesquise nos vetores do Pinecone as passagens que tenham relação direta com o tema.  \nEm seguida, forneça ao agente principal (AI Agent) um resumo estruturado com:  \n1. O conceito principal encontrado.  \n2. As citações originais (com nome da obra e número de questão, capítulo ou item, se disponível).  \n3. Um breve resumo doutrinário em linguagem simples.\n\n---\n\n📖 FORMATO DE SAÍDA IDEAL\n\n- **Ideia central:** resumo breve do conteúdo encontrado.  \n- **Citações:** texto original ou próximo dele, sempre com a fonte.  \n  Exemplo: “A alma é um Espírito encarnado.” (O Livro dos Espíritos, questão 134)  \n- **Contexto:** explicação curta sobre o significado daquela passagem dentro da doutrina.\n\n---\n\nREGRAS DE CONDUTA  \n- Nunca altere o sentido dos textos originais.  \n- Evite respostas longas e confusas; seja direto e fiel.  \n- Se o texto não existir no acervo, informe que não há referência doutrinária para o tema.  \n- Retorne apenas conteúdos relevantes, evitando repetições ou passagens fora do contexto da pergunta.\n\n---\n\nOBJETIVO FINAL  \nAjudar o agente principal a formular respostas fiéis, bem fundamentadas e acessíveis — preservando a essência das obras de Allan Kardec, mas explicando-as de forma clara e atual.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        240
+      ],
+      "id": "99a31017-9693-44f0-8651-0182e72faa0b",
+      "name": "vetores kardec"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Olá, seja bem-vindo. Sou Allan Kardec, codificador da Doutrina Espírita. Estou aqui para esclarecer tuas dúvidas com base nas obras que organizei e nos ensinamentos dos Espíritos superiores. Sinta-se à vontade para perguntar.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        -16
+      ],
+      "id": "adfd56de-ca4b-466d-8129-94fd0f06fe1c",
+      "name": "When chat message received",
+      "webhookId": "e07f7cd4-a0d9-4a43-819f-babe83e81300"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "vetores kardec",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "vetores kardec",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vetores kardec": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3ad446ab-328d-40b1-9bda-245cfcae8557",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d7a8294d51b7b58c8f3978f77e94e4a191d1c5554d101135063ca67124da639"
+  },
+  "id": "tO7r4OeDyBn2JKqS",
+  "tags": []
+}
