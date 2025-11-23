@@ -1,93 +1,99 @@
 🚀 RAG Inteligente com Pinecone + Gemini + n8n
 
-Sistema de Recuperação de Conhecimento com IA Generativa aplicado a documentos técnicos
+Sistema completo de Recuperação Aumentada por Geração (RAG) aplicado a documentos técnicos, permitindo que uma IA responda perguntas de forma precisa, com base em PDFs reais enviados pelo usuário.
 
 🔍 Visão Geral do Projeto
 
-Este projeto é um sistema completo de RAG (Retrieval Augmented Generation) que permite que uma IA responda perguntas com base em documentos reais enviados pelo usuário (PDFs, manuais, relatórios, SOPs, normas internas etc.).
+Este sistema utiliza IA generativa + busca vetorial + automação para criar um assistente inteligente capaz de responder perguntas fundamentadas somente no conteúdo dos documentos.
 
 Ele combina:
 
 Pinecone → Banco vetorial para busca por similaridade
 
-Gemini / OpenAI → Modelo generativo para produzir respostas contextualizadas
+Gemini / OpenAI → Modelo generativo para respostas contextuais
 
-n8n → Orquestração do fluxo completo
+n8n → Orquestração do fluxo completo (ETL + automação)
 
-Embeddings → Conversão do texto em vetores
+Embeddings → Conversão de texto em vetores
 
-API / Webhook → Canal de comunicação com o usuário
+Webhook / API → Ponto de entrada para perguntas
 
 Ideal para:
 
 ✔ Suporte técnico interno
 ✔ Documentação industrial
+✔ Manuais operacionais
 ✔ Chatbots corporativos
-✔ Manuais de operação
-✔ Assistentes inteligentes especializados
+✔ Assistentes especializados em normas internas
 ✔ Redução de erros e alucinação
 
 🧠 Arquitetura Geral
 [Usuário]
-   ↓ envia pergunta (HTTP/Webhook)
+   ↓ (pergunta via Webhook)
 [n8n]
-   ↓ busca contexto
-[Pinecone – vetores]
+   ↓ consulta vetorial
+[Pinecone]
    ↓ retorna trechos relevantes
 [n8n]
-   ↓ envia contexto + pergunta
+   ↓ envia pergunta + contexto
 [Gemini / OpenAI]
-   ↓ gera resposta com base nos documentos
+   ↓ gera resposta fundamentada
 [n8n]
-   ↓ entrega a resposta final
+   ↓ retorna ao usuário (JSON)
 
 🔧 Tecnologias Utilizadas
 Tecnologia	Função
 n8n	Automação e orquestração
 Pinecone	Banco vetorial
-Gemini / GPT-4o	Geração de respostas
-Embeddings (OpenAI ou Google)	Vetorização de textos
-PDF Extract Node	Extração de conteúdo
+Gemini / GPT-4o	IA generativa
+Embeddings OpenAI/Google	Vetorização de textos
+PDF Extract Node	Leitura de PDFs
 HTTP Node	API / Webhook
-JavaScript Node	Tratamento de dados
+JavaScript Node	Pré-processamento e formatação
 📂 Funcionalidades do Projeto
-✔ 1. Upload e indexação automática de documentos
+✔ 1. Indexação automática de documentos
 
-Envio de PDF
+Upload de PDF
 
-Extração de texto
+Extração do texto
 
 Divisão em chunks
 
 Criação de embeddings
 
-Inserção no Pinecone com metadados (nome, página, trecho)
+Armazenamento no Pinecone com metadados:
+
+nome do arquivo
+
+página
+
+trecho original
 
 ✔ 2. Chat / API inteligente
 
-O usuário pode enviar perguntas via:
+Perguntas podem ser enviadas por:
 
-Webhook
+Webhook (padrão)
 
 API REST
 
-Interface simples (HTML opcional)
+Interface simples (opcional)
 
 Chat interno do n8n
 
-✔ 3. Recuperação contextual inteligente
+✔ 3. Recuperação contextual
 
-Busca trechos relevantes no Pinecone
+Busca vetorial no Pinecone
 
-Organiza o contexto
+Organização do contexto
 
-Envia para o modelo generativo
+Envio ao modelo generativo
 
-A resposta é construída somente com base no documento
+Resposta totalmente baseada no documento
 
 ✔ 4. Anti-alucinação
 
-A resposta contém:
+Toda resposta inclui:
 
 Trechos usados
 
@@ -97,59 +103,61 @@ Página
 
 Evidências textuais
 
-📝 Fluxo Completo no n8n
+📝 Workflow Completo no n8n
 
-Workflow inclui:
+O workflow inclui:
 
-Webhook (entrada de perguntas)
+Entrada via Webhook
+
+Extração e pré-processamento
 
 Busca vetorial no Pinecone
 
-Formatação do contexto
+Montagem do prompt
 
-LLM (Gemini ou OpenAI)
+Geração com Gemini / OpenAI
 
-Retorno em JSON
+Resposta final estruturada
 
-Logs opcionais em Notion / Sheets
+(Opcional) logs em Notion / Sheets
 
-🧪 Demonstração – Exemplo real
+🎯 Uma captura do workflow está disponível em:
+
+👉 /docs/workflow.png
+
+🧪 Exemplo de Funcionamento
 
 Pergunta:
 
 “Qual o procedimento correto para ajustar o equipamento X na etapa Y?”
 
-Resposta gerada:
+Resposta:
 
 Procedimento completo
 
 Página do documento
 
-Fonte (nome do PDF)
+Nome do PDF
 
-Trecho usado para justificar a resposta
+Trecho usado como evidência
 
-Informações adicionais
+Explicação contextual
 
-📁 Estrutura recomendada do repositório
+📁 Estrutura do Repositório
 📦 rag-n8n-pinecone-gemini
 │
-├── README.md                ← documentação principal
-├── workflow.json            ← export do workflow n8n
-├── .env.example             ← exemplo de variáveis
+├── README.md              ← documentação principal
+├── workflow.json          ← exportação do fluxo n8n
+├── .env.example           ← variáveis de ambiente
 │
 ├── /docs
-│     ├── arquitetura.png
-│     ├── diagrama.png
-│     └── documentos-exemplo.pdf
+│     ├── workflow.png     ← print do workflow no n8n
+│     └── README.md        ← documentação complementar
 │
 └── /scripts
-      └── preprocess.js
+      └── preprocess.js    ← scripts opcionais
 
-🔑 Variáveis de Ambiente Necessárias
-
-Crie um arquivo .env.example com:
-
+🔑 Variáveis de Ambiente (.env.example)
 PINECONE_API_KEY=xxxxx
 PINECONE_ENVIRONMENT=gcp-starter
 PINECONE_INDEX=my-index
@@ -159,68 +167,77 @@ GEMINI_API_KEY=xxxxx
 
 N8N_WEBHOOK_URL=https://seu-n8n.cloud/webhook
 
-▶️ Como executar o projeto
+▶️ Como Executar o Projeto
 1. Importar o workflow
 
-No n8n:
-Settings → Workflows → Import
+n8n → Settings → Workflows → Import
 
-2. Configurar as variáveis
+2. Configurar variáveis
 
-Coloque seu .env ou configure diretamente nos nós.
+Adicionar .env ou configurar dentro dos nós.
 
-3. Criar o Index no Pinecone
+3. Criar o index no Pinecone
 
-Dimensão corresponde ao embedding
+Defina:
 
-Namespaces opcionais
+dimensão dos vetores (de acordo com o embedding)
+
+namespace (opcional)
 
 4. Executar
 
-Use a URL do webhook para enviar perguntas.
+Envie perguntas para a URL do Webhook.
 
-🧑‍💻 Endpoints
+🧑‍💻 Endpoint
 POST /ask
+
 Body:
+
 {
   "question": "como ajustar a máquina X?"
 }
 
+
 Resposta:
+
 {
   "answer": "...",
   "sources": [
     {
       "file": "manual.pdf",
       "page": 12,
-      "snippet": "..."
+      "snippet": "trecho usado..."
     }
   ]
 }
 
 🎥 Vídeo Demonstrativo
 
-➡ https://www.linkedin.com/feed/update/urn:li:activity:7385082313673674752/
+👉 https://www.linkedin.com/feed/update/urn:li:activity:7385082313673674752/
 
 🚀 Resultados e Impacto
 
 Este projeto demonstra:
 
-Domínio de IA generativa aplicada a negócios
+Aplicação de IA generativa em casos reais
 
-Operação de bancos vetoriais
+Automação avançada com n8n
 
-Construção de automações complexas com n8n
+Uso de bancos vetoriais para busca contextual
+
+Implementação de pipelines RAG completos
 
 Arquitetura profissional e escalável
 
-Mitigação de alucinação
-
-Uso de modelos avançados (Gemini / OpenAI)
+Redução de alucinação em assistentes de IA
 
 👨‍💻 Autor
 
 MICHAEL DOUGLAS TEOFILO
 Especialista em Automação com IA e n8n
-LinkedIn: https://www.linkedin.com/in/michael-douglas-automacao-ia/
-Portfólio: 
+
+🔗 LinkedIn:
+https://www.linkedin.com/in/michael-douglas-automacao-ia/
+
+🔗 Portfólio (GitHub):
+https://github.com/Michael-MDT22
