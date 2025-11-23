@@ -123,7 +123,7 @@ Resposta final estruturada
 
 🎯 Uma captura do workflow está disponível em:
 
-👉 /docs/workflow.png
+👉 https://github.com/Michael-MDT22/rag-n8n-pinecone-gemini/blob/main/docs/workflow.png
 
 🧪 Exemplo de Funcionamento
 
