@@ -165,7 +165,7 @@ PINECONE_INDEX=my-index
 OPENAI_API_KEY=xxxxx
 GEMINI_API_KEY=xxxxx
 
-N8N_WEBHOOK_URL=https://seu-n8n.cloud/webhook
+N8N_WEBHOOK_URL=
 
 ▶️ Como Executar o Projeto
 1. Importar o workflow
