@@ -1,243 +1,81 @@
-🚀 RAG Inteligente com Pinecone + Gemini + n8n
+# Assistente de estudo das obras de Allan Kardec (RAG com n8n, Pinecone e Gemini)
 
-Sistema completo de Recuperação Aumentada por Geração (RAG) aplicado a documentos técnicos, permitindo que uma IA responda perguntas de forma precisa, com base em PDFs reais enviados pelo usuário.
+Chatbot que responde perguntas sobre a Doutrina Espírita usando só os livros indexados num banco vetorial (RAG). Os PDFs colocados numa pasta do Google Drive são indexados automaticamente no Pinecone, e um agente com Gemini consulta esses trechos antes de responder.
 
-🔍 Visão Geral do Projeto
+🎥 [Vídeo de demonstração](https://www.linkedin.com/feed/update/urn:li:activity:7385082313673674752/)
 
-Este sistema utiliza IA generativa + busca vetorial + automação para criar um assistente inteligente capaz de responder perguntas fundamentadas somente no conteúdo dos documentos.
+![Workflow no n8n](docs/workflow.png)
 
-Ele combina:
+## Arquitetura
 
-Pinecone → Banco vetorial para busca por similaridade
+O arquivo `RAG Pinecone.json` tem dois fluxos independentes.
 
-Gemini / OpenAI → Modelo generativo para respostas contextuais
+### 1. Indexação
 
-n8n → Orquestração do fluxo completo (ETL + automação)
+```text
+Google Drive Trigger (arquivo novo na pasta "n8n RAG", verificação a cada minuto)
+  → Download file
+  → Pinecone Vector Store (modo insert)
+       ├─ Default Data Loader: lê o PDF e grava o nome do arquivo no metadado "Livro"
+       └─ Embeddings Google Gemini: gera os vetores
+```
 
-Embeddings → Conversão de texto em vetores
+Os vetores ficam no índice `n8nteste2`, namespace `n8nrag`.
 
-Webhook / API → Ponto de entrada para perguntas
+### 2. Chat
 
-Ideal para:
+```text
+When chat message received (chat público do n8n)
+  → AI Agent (Gemini)
+       ├─ Simple Memory: últimas 10 mensagens da conversa
+       └─ Ferramenta "vetores kardec" (Vector Store Tool)
+            ├─ Pinecone Vector Store1: busca no mesmo índice e namespace
+            ├─ Embeddings Google Gemini1
+            └─ Google Gemini Chat Model1: resume os trechos encontrados
+```
 
-✔ Suporte técnico interno
-✔ Documentação industrial
-✔ Manuais operacionais
-✔ Chatbots corporativos
-✔ Assistentes especializados em normas internas
-✔ Redução de erros e alucinação
+O agente decide quando consultar a ferramenta. A ferramenta busca os trechos no Pinecone e devolve um resumo com a ideia central, as citações (obra, questão ou capítulo, quando o texto traz) e o contexto.
 
-🧠 Arquitetura Geral
-[Usuário]
-   ↓ (pergunta via Webhook)
-[n8n]
-   ↓ consulta vetorial
-[Pinecone]
-   ↓ retorna trechos relevantes
-[n8n]
-   ↓ envia pergunta + contexto
-[Gemini / OpenAI]
-   ↓ gera resposta fundamentada
-[n8n]
-   ↓ retorna ao usuário (JSON)
+## Como o agente responde
 
-🔧 Tecnologias Utilizadas
-Tecnologia	Função
-n8n	Automação e orquestração
-Pinecone	Banco vetorial
-Gemini / GPT-4o	IA generativa
-Embeddings OpenAI/Google	Vetorização de textos
-PDF Extract Node	Leitura de PDFs
-HTTP Node	API / Webhook
-JavaScript Node	Pré-processamento e formatação
-📂 Funcionalidades do Projeto
-✔ 1. Indexação automática de documentos
+O prompt separa o que é texto da doutrina do que é interpretação:
 
-Upload de PDF
+1. **Base doutrinária explícita:** o que as obras dizem diretamente, com a fonte. Se o tema não aparece nas obras, o agente diz isso.
+2. **Princípios e interpretação:** explicação a partir dos princípios gerais, sinalizada como interpretação.
+3. **Nota contextual externa (opcional):** visões de fora da codificação, marcadas como tal.
 
-Extração do texto
+O acervo pensado é: O Livro dos Espíritos, O Livro dos Médiuns, O Evangelho Segundo o Espiritismo, O Céu e o Inferno, A Gênese e a Revista Espírita (1858–1869).
 
-Divisão em chunks
+## Arquivos
 
-Criação de embeddings
+| Arquivo | Conteúdo |
+|---|---|
+| `RAG Pinecone.json` | Workflow exportado do n8n (indexação + chat) |
+| `docs/workflow.png` | Captura do workflow |
+| `.env.example` | Lista das chaves necessárias |
 
-Armazenamento no Pinecone com metadados:
+## Como executar
 
-nome do arquivo
+1. Crie um índice no Pinecone com métrica *cosine* e a mesma dimensão do modelo de embedding escolhido no nó `Embeddings Google Gemini` (por exemplo, `text-embedding-004` gera vetores de 768 dimensões). Se as dimensões não baterem, o Pinecone recusa a inserção.
+2. No n8n, importe `RAG Pinecone.json` (menu **Workflows → Import from File**).
+3. Crie as credenciais e selecione-as nos nós:
+   - **Google Drive OAuth2**: `Google Drive Trigger` e `Download file`
+   - **Pinecone API**: `Pinecone Vector Store` e `Pinecone Vector Store1`
+   - **Google Gemini (PaLM) API**: os dois nós de embeddings e os dois de chat
+4. Nos dois nós do Pinecone, escolha o seu índice. No `Google Drive Trigger`, escolha a sua pasta.
+5. Ative o workflow e coloque os PDFs na pasta. Cada arquivo novo é indexado em até um minuto.
+6. Abra a URL do nó `When chat message received` para conversar.
 
-página
+> As chaves ficam nas credenciais do n8n. O workflow não lê variáveis de ambiente; o `.env.example` serve só como lista do que é preciso.
 
-trecho original
+## Limitações conhecidas
 
-✔ 2. Chat / API inteligente
+- **Memória em RAM.** O `Simple Memory` perde o histórico quando o n8n reinicia e não funciona em modo fila (*queue mode*). Em produção, o ideal é memória em Postgres ou Redis.
+- **Sem número de página.** O único metadado salvo é o nome do arquivo. A fonte citada depende de o próprio trecho conter o número da questão ou do capítulo.
+- **Reindexação duplica.** Enviar o mesmo PDF de novo insere os vetores outra vez; não há limpeza nem verificação de duplicados.
+- **Chat público.** O chat está com acesso público. Antes de divulgar a URL, vale ativar autenticação ou limitar o uso para controlar o custo da API.
 
-Perguntas podem ser enviadas por:
+## Autor
 
-Webhook (padrão)
-
-API REST
-
-Interface simples (opcional)
-
-Chat interno do n8n
-
-✔ 3. Recuperação contextual
-
-Busca vetorial no Pinecone
-
-Organização do contexto
-
-Envio ao modelo generativo
-
-Resposta totalmente baseada no documento
-
-✔ 4. Anti-alucinação
-
-Toda resposta inclui:
-
-Trechos usados
-
-Nome do arquivo
-
-Página
-
-Evidências textuais
-
-📝 Workflow Completo no n8n
-
-O workflow inclui:
-
-Entrada via Webhook
-
-Extração e pré-processamento
-
-Busca vetorial no Pinecone
-
-Montagem do prompt
-
-Geração com Gemini / OpenAI
-
-Resposta final estruturada
-
-(Opcional) logs em Notion / Sheets
-
-🎯 Uma captura do workflow está disponível em:
-
-👉 https://github.com/Michael-MDT22/rag-n8n-pinecone-gemini/blob/main/docs/workflow.png
-
-🧪 Exemplo de Funcionamento
-
-Pergunta:
-
-“Qual o procedimento correto para ajustar o equipamento X na etapa Y?”
-
-Resposta:
-
-Procedimento completo
-
-Página do documento
-
-Nome do PDF
-
-Trecho usado como evidência
-
-Explicação contextual
-
-📁 Estrutura do Repositório
-📦 rag-n8n-pinecone-gemini
-│
-├── README.md              ← documentação principal
-├── workflow.json          ← exportação do fluxo n8n
-├── .env.example           ← variáveis de ambiente
-│
-├── /docs
-│     ├── workflow.png     ← print do workflow no n8n
-│     └── README.md        ← documentação complementar
-│
-└── /scripts
-      └── preprocess.js    ← scripts opcionais
-
-🔑 Variáveis de Ambiente (.env.example)
-PINECONE_API_KEY=xxxxx
-PINECONE_ENVIRONMENT=gcp-starter
-PINECONE_INDEX=my-index
-
-OPENAI_API_KEY=xxxxx
-GEMINI_API_KEY=xxxxx
-
-N8N_WEBHOOK_URL=
-
-▶️ Como Executar o Projeto
-1. Importar o workflow
-
-n8n → Settings → Workflows → Import
-
-2. Configurar variáveis
-
-Adicionar .env ou configurar dentro dos nós.
-
-3. Criar o index no Pinecone
-
-Defina:
-
-dimensão dos vetores (de acordo com o embedding)
-
-namespace (opcional)
-
-4. Executar
-
-Envie perguntas para a URL do Webhook.
-
-🧑‍💻 Endpoint
-POST /ask
-
-Body:
-
-{
-  "question": "como ajustar a máquina X?"
-}
-
-
-Resposta:
-
-{
-  "answer": "...",
-  "sources": [
-    {
-      "file": "manual.pdf",
-      "page": 12,
-      "snippet": "trecho usado..."
-    }
-  ]
-}
-
-🎥 Vídeo Demonstrativo
-
-👉 https://www.linkedin.com/feed/update/urn:li:activity:7385082313673674752/
-
-🚀 Resultados e Impacto
-
-Este projeto demonstra:
-
-Aplicação de IA generativa em casos reais
-
-Automação avançada com n8n
-
-Uso de bancos vetoriais para busca contextual
-
-Implementação de pipelines RAG completos
-
-Arquitetura profissional e escalável
-
-Redução de alucinação em assistentes de IA
-
-👨‍💻 Autor
-
-MICHAEL DOUGLAS TEOFILO
-Especialista em Automação com IA e n8n
-
-🔗 LinkedIn:
-https://www.linkedin.com/in/michael-douglas-automacao-ia/
-
-🔗 Portfólio (GitHub):
-https://github.com/Michael-MDT22
+**Michael Douglas Teofilo**
+[LinkedIn](https://www.linkedin.com/in/michael-douglas-automacao-ia/) · [GitHub](https://github.com/Michael-MDT22)
